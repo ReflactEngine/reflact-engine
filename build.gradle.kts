@@ -1,8 +1,9 @@
 plugins {
     `java-library`
+    `maven-publish`
 }
 
-group = "net.reflect"
+group = "net.reflact"
 version = "1.0.0-SNAPSHOT"
 
 repositories {
@@ -18,11 +19,22 @@ dependencies {
     
     // Logging
     implementation("org.slf4j:slf4j-api:2.0.16")
+    
+    // JSON
+    implementation("com.google.code.gson:gson:2.10.1")
 }
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(25))
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
     }
 }
 
