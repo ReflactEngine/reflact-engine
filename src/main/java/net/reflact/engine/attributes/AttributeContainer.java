@@ -26,6 +26,12 @@ public class AttributeContainer {
             modifiers.get(attribute).removeIf(mod -> mod.id().equals(modifierId));
         }
     }
+    
+    public void clearModifiersByPrefix(String prefix) {
+        for (List<AttributeModifier> mods : modifiers.values()) {
+            mods.removeIf(mod -> mod.id().startsWith(prefix));
+        }
+    }
 
     public double getValue(Attribute attribute) {
         double base = getBaseValue(attribute);

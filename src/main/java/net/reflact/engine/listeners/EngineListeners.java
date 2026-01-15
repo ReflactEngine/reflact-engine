@@ -13,9 +13,19 @@ import net.reflact.engine.ReflactEngine;
 import net.reflact.engine.data.ReflactPlayer;
 import net.reflact.engine.spells.ClickType;
 
+import net.minestom.server.event.player.PlayerChatEvent;
+import net.kyori.adventure.text.Component;
+
 public class EngineListeners {
 
     public static void register(GlobalEventHandler handler) {
+        // Chat Handling
+        handler.addListener(PlayerChatEvent.class, event -> {
+            event.setCancelled(true);
+            Component message = Component.text(event.getPlayer().getUsername() + ": " + event.getRawMessage());
+            MinecraftServer.getConnectionManager().getOnlinePlayers().forEach(p -> p.sendMessage(message));
+        });
+
         // Data Loading
         handler.addListener(AsyncPlayerConfigurationEvent.class, event -> {
             ReflactEngine.getPlayerManager().loadPlayer(event.getPlayer().getUuid(), event.getPlayer().getUsername());
@@ -56,5 +66,9 @@ public class EngineListeners {
                 ReflactEngine.getSpellManager().processClick(event.getPlayer(), ClickType.RIGHT);
             }
         });
+        
+        // Stats
+        EquipmentListener.register(handler);
+        DamageListener.register(handler);
     }
 }
