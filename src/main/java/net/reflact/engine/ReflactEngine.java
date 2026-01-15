@@ -26,15 +26,26 @@ public class ReflactEngine {
     private static NetworkManager networkManager;
     private static ItemManager itemManager;
 
+    private static AxiomManager axiomManager;
+
     public static void init() {
         LOGGER.info("ReflactEngine initialized!");
+        
+        // Register Packets
+        net.reflact.engine.networking.ReflactProtocol.register("mana_update", net.reflact.engine.networking.packet.ManaUpdatePacket.class);
+        net.reflact.engine.networking.ReflactProtocol.register("cast_spell", net.reflact.engine.networking.packet.CastSpellPacket.class);
+        net.reflact.engine.networking.ReflactProtocol.register("sync_item", net.reflact.engine.networking.packet.S2CSyncItemPacket.class);
+        
         playerManager = new PlayerManager();
         spellManager = new SpellManager();
         networkManager = new NetworkManager();
         itemManager = new ItemManager();
+        axiomManager = new net.reflact.engine.axiom.AxiomManager();
         
         RpgAttributes.registerAll();
         networkManager.init();
+        spellManager.init();
+        axiomManager.init();
         
         // Register default spells
         spellManager.register(new FireballSpell(), List.of(ClickType.RIGHT, ClickType.LEFT, ClickType.RIGHT));
@@ -60,6 +71,7 @@ public class ReflactEngine {
         sword.setAttribute("attack_damage", 5.0);
         sword.setAttribute("attack_speed", 1.2);
         sword.setLore(List.of("A simple blade for a simple adventurer."));
+        sword.setCustomModelData(1);
         itemManager.register(sword);
         
         RpgItem chestplate = new RpgItem("mythic_chest", "Aegis of Valor", ItemType.CHESTPLATE, ItemTier.MYTHIC);
@@ -67,6 +79,7 @@ public class ReflactEngine {
         chestplate.setAttribute("defense", 50.0);
         chestplate.setAttribute("health_regen", 5.0);
         chestplate.setLore(List.of("Forged in the fires of the sun.", "Grants immense power."));
+        chestplate.setCustomModelData(2);
         itemManager.register(chestplate);
     }
 

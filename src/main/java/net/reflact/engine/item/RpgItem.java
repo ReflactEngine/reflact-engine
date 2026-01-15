@@ -15,6 +15,7 @@ public class RpgItem {
     private ItemTier tier;
     private int levelRequirement;
     private String classRequirement; // e.g., "Warrior", "Mage"
+    private int customModelData; // For resource pack texture mapping
     
     // Base stats (built-in to the item)
     private Map<String, Double> attributes = new HashMap<>();
@@ -28,6 +29,7 @@ public class RpgItem {
         this.type = type;
         this.tier = tier;
         this.uuid = UUID.randomUUID();
+        this.customModelData = 0; // Default none
     }
     
     public void setAttribute(String attributeId, double value) {
@@ -51,4 +53,6 @@ public class RpgItem {
     public void setClassRequirement(String classRequirement) { this.classRequirement = classRequirement; }
     public Map<String, Double> getAttributes() { return attributes; }
     public UUID getUuid() { return uuid; }
+    public int getCustomModelData() { return customModelData; }
+    public void setCustomModelData(int customModelData) { this.customModelData = customModelData; }
 }
