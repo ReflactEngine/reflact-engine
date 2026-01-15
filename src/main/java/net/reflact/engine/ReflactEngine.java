@@ -28,6 +28,8 @@ public class ReflactEngine {
 
     private static AxiomManager axiomManager;
 
+    private static net.reflact.engine.database.DatabaseManager databaseManager;
+
     public static void init() {
         LOGGER.info("ReflactEngine initialized!");
         
@@ -35,6 +37,9 @@ public class ReflactEngine {
         net.reflact.engine.networking.ReflactProtocol.register("mana_update", net.reflact.engine.networking.packet.ManaUpdatePacket.class);
         net.reflact.engine.networking.ReflactProtocol.register("cast_spell", net.reflact.engine.networking.packet.CastSpellPacket.class);
         net.reflact.engine.networking.ReflactProtocol.register("sync_item", net.reflact.engine.networking.packet.S2CSyncItemPacket.class);
+        
+        databaseManager = new net.reflact.engine.database.DatabaseManager();
+        databaseManager.init();
         
         playerManager = new PlayerManager();
         spellManager = new SpellManager();
@@ -50,8 +55,11 @@ public class ReflactEngine {
         // Register default spells
         spellManager.register(new FireballSpell(), List.of(ClickType.RIGHT, ClickType.LEFT, ClickType.RIGHT));
         
-        // Register sample items
-        registerSampleItems();
+        // Load Items from DB
+        List<net.reflact.engine.item.RpgItem> items = databaseManager.loadItems();
+        for (net.reflact.engine.item.RpgItem item : items) {
+            itemManager.register(item);
+        }
         
         // Register events
         EngineListeners.register(MinecraftServer.getGlobalEventHandler());
@@ -61,26 +69,14 @@ public class ReflactEngine {
         commandManager.register(new BuildModeCommand());
         commandManager.register(new RankCommand());
         commandManager.register(new net.reflact.engine.commands.GiveItemCommand());
+        commandManager.register(new net.reflact.engine.commands.GamemodeCommand());
         
         // Start Tasks
         net.reflact.engine.tasks.ManaTask.start();
     }
     
-    private static void registerSampleItems() {
-        RpgItem sword = new RpgItem("starter_sword", "Novice Blade", ItemType.WEAPON, ItemTier.NORMAL);
-        sword.setAttribute("attack_damage", 5.0);
-        sword.setAttribute("attack_speed", 1.2);
-        sword.setLore(List.of("A simple blade for a simple adventurer."));
-        sword.setCustomModelData(1);
-        itemManager.register(sword);
-        
-        RpgItem chestplate = new RpgItem("mythic_chest", "Aegis of Valor", ItemType.CHESTPLATE, ItemTier.MYTHIC);
-        chestplate.setAttribute("health", 100.0);
-        chestplate.setAttribute("defense", 50.0);
-        chestplate.setAttribute("health_regen", 5.0);
-        chestplate.setLore(List.of("Forged in the fires of the sun.", "Grants immense power."));
-        chestplate.setCustomModelData(2);
-        itemManager.register(chestplate);
+    public static net.reflact.engine.database.DatabaseManager getDatabaseManager() {
+        return databaseManager;
     }
 
     public static PlayerManager getPlayerManager() {
