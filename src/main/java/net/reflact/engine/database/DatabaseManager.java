@@ -2,9 +2,9 @@ package net.reflact.engine.database;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import net.reflact.engine.item.ItemTier;
-import net.reflact.engine.item.ItemType;
-import net.reflact.engine.item.RpgItem;
+import net.reflact.common.item.CustomItem;
+import net.reflact.common.item.ItemTier;
+import net.reflact.common.item.ItemType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,27 +52,32 @@ public class DatabaseManager {
     
     private void seedDefaults() {
         LOGGER.info("Seeding default data...");
-        RpgItem sword = new RpgItem("starter_sword", "Novice Blade", ItemType.WEAPON, ItemTier.NORMAL);
-        sword.setAttribute("attack_damage", 5.0);
-        sword.setAttribute("attack_speed", 1.2);
-        sword.setLore(List.of("A simple blade for a simple adventurer."));
-        sword.setCustomModelData(1);
+        
+        CustomItem sword = CustomItem.builder("starter_sword", ItemType.WEAPON, ItemTier.NORMAL)
+                .name("Novice Blade")
+                .attr("attack_damage", 5.0)
+                .attr("attack_speed", 1.2)
+                .lore("A simple blade for a simple adventurer.")
+                .model(1)
+                .build();
         saveItem(sword);
         
-        RpgItem chestplate = new RpgItem("mythic_chest", "Aegis of Valor", ItemType.CHESTPLATE, ItemTier.MYTHIC);
-        chestplate.setAttribute("health", 100.0);
-        chestplate.setAttribute("defense", 50.0);
-        chestplate.setAttribute("health_regen", 5.0);
-        chestplate.setLore(List.of("Forged in the fires of the sun.", "Grants immense power."));
-        chestplate.setCustomModelData(2);
+        CustomItem chestplate = CustomItem.builder("mythic_chest", ItemType.CHESTPLATE, ItemTier.MYTHIC)
+                .name("Aegis of Valor")
+                .attr("health", 100.0)
+                .attr("defense", 50.0)
+                .attr("health_regen", 5.0)
+                .lore("Forged in the fires of the sun.", "Grants immense power.")
+                .model(2)
+                .build();
         saveItem(chestplate);
     }
     
-    public void saveItem(RpgItem item) {
+    public void saveItem(CustomItem item) {
         String sql = "INSERT OR REPLACE INTO items (id, display_name, type, tier, custom_model_data, attributes, lore) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, item.getId());
-            pstmt.setString(2, item.getDisplayName());
+            pstmt.setString(2, item.getName());
             pstmt.setString(3, item.getType().name());
             pstmt.setString(4, item.getTier().name());
             pstmt.setInt(5, item.getCustomModelData());
@@ -84,8 +89,8 @@ public class DatabaseManager {
         }
     }
     
-    public List<RpgItem> loadItems() {
-        List<RpgItem> items = new ArrayList<>();
+    public List<CustomItem> loadItems() {
+        List<CustomItem> items = new ArrayList<>();
         String sql = "SELECT * FROM items";
         
         try (Statement stmt = connection.createStatement();
@@ -100,20 +105,21 @@ public class DatabaseManager {
                 String attrJson = rs.getString("attributes");
                 String loreJson = rs.getString("lore");
                 
-                RpgItem item = new RpgItem(id, name, type, tier);
-                item.setCustomModelData(cmd);
+                var builder = CustomItem.builder(id, type, tier)
+                        .name(name)
+                        .model(cmd);
                 
                 Map<String, Double> attributes = GSON.fromJson(attrJson, new TypeToken<Map<String, Double>>(){}.getType());
                 if (attributes != null) {
-                    attributes.forEach(item::setAttribute);
+                    attributes.forEach(builder::attr);
                 }
                 
                 List<String> lore = GSON.fromJson(loreJson, new TypeToken<List<String>>(){}.getType());
                 if (lore != null) {
-                    item.setLore(lore);
+                    builder.lore(lore);
                 }
                 
-                items.add(item);
+                items.add(builder.build());
             }
         } catch (SQLException e) {
             LOGGER.error("Failed to load items", e);

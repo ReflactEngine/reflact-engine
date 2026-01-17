@@ -8,52 +8,47 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.item.component.CustomData;
 import net.minestom.server.item.component.CustomModelData;
-import net.reflact.engine.item.ItemType;
-import net.reflact.engine.item.RpgItem;
+import net.reflact.common.item.CustomItem;
+import net.reflact.common.item.ItemType;
 import net.reflact.engine.registry.ReflactRegistry;
 
 import java.util.Optional;
+import java.util.List;
 
 public class ItemManager {
-    private final ReflactRegistry<RpgItem> itemRegistry = new ReflactRegistry<>("Items");
+    private final ReflactRegistry<CustomItem> itemRegistry = new ReflactRegistry<>("Items");
 
-    public void register(RpgItem item) {
+    public void register(CustomItem item) {
         itemRegistry.register(item.getId(), item);
     }
 
-    public Optional<RpgItem> getTemplate(String id) {
+    public Optional<CustomItem> getTemplate(String id) {
         return itemRegistry.get(id);
     }
 
-    public RpgItem createUnique(String itemId) {
-        Optional<RpgItem> templateOpt = itemRegistry.get(itemId);
+    public CustomItem createUnique(String itemId) {
+        Optional<CustomItem> templateOpt = itemRegistry.get(itemId);
         if (templateOpt.isEmpty()) return null;
 
-        RpgItem template = templateOpt.get();
-        RpgItem uniqueItem = new RpgItem(template.getId(), template.getDisplayName(), template.getType(), template.getTier());
-        uniqueItem.setLore(template.getLore());
-        uniqueItem.setLevelRequirement(template.getLevelRequirement());
-        uniqueItem.setClassRequirement(template.getClassRequirement());
-        uniqueItem.setCustomModelData(template.getCustomModelData());
-        template.getAttributes().forEach(uniqueItem::setAttribute);
-        
-        return uniqueItem;
+        return templateOpt.get().instantiate();
     }
 
-    public ItemStack toItemStack(RpgItem item) {
+    public ItemStack toItemStack(CustomItem item) {
         if (item == null) return ItemStack.AIR;
         
         Material material = mapTypeToMaterial(item.getType());
 
         var builder = ItemStack.builder(material)
-                .set(DataComponents.CUSTOM_NAME, Component.text(item.getTier().getColor()).append(Component.text(item.getDisplayName())).decoration(TextDecoration.ITALIC, false))
+                .set(DataComponents.CUSTOM_NAME, Component.text(item.getTier().getColor()).append(Component.text(item.getName())).decoration(TextDecoration.ITALIC, false))
                 .set(DataComponents.CUSTOM_DATA, new CustomData(CompoundBinaryTag.builder()
                         .putString("reflact_uuid", item.getUuid().toString())
                         .putString("reflact_template_id", item.getId())
                         .build()));
 
         if (item.getCustomModelData() != 0) {
-            builder.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(item.getCustomModelData()));
+            // New Minestom API requires lists for flags/strings/colors, or use a simpler helper if available.
+            // Using raw values for now or assuming just integer for old behavior
+             builder.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(List.of((float)item.getCustomModelData()), List.of(), List.of(), List.of()));
         }
 
         return builder.build();

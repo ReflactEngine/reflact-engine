@@ -1,60 +1,77 @@
 package net.reflact.engine.networking;
 
+import com.google.gson.Gson;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.player.PlayerPluginMessageEvent;
 import net.minestom.server.network.packet.server.common.PluginMessagePacket;
-import net.reflact.engine.networking.packet.ReflactPacket;
+import net.reflact.common.network.PacketRegistry;
+import net.reflact.common.network.packet.ReflactPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 public class NetworkManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(NetworkManager.class);
     public static final String CHANNEL = "reflact:main";
+    private static final Gson gson = new Gson();
+
+    private final Map<String, BiConsumer<Player, ReflactPacket>> handlers = new ConcurrentHashMap<>();
 
     public void init() {
-        // Handle incoming packets from Client
         MinecraftServer.getGlobalEventHandler().addListener(PlayerPluginMessageEvent.class, event -> {
             if (!event.getIdentifier().equals(CHANNEL)) return;
 
             try {
-                // We assume the payload matches what we write: VarInt Length + String Bytes
-                // Or if we change Client to just send Raw Bytes, we can read directly.
-                // For now, let's try to read the string assuming standard Minecraft String serialization.
                 String message = readStringFromBytes(event.getMessage());
-                
-                ReflactPacket packet = ReflactProtocol.deserialize(message);
-                if (packet != null) {
-                    handlePacket(event.getPlayer(), packet);
+                int splitIndex = message.indexOf(":");
+                if (splitIndex == -1) return;
+
+                String id = message.substring(0, splitIndex);
+                String json = message.substring(splitIndex + 1);
+
+                Class<? extends ReflactPacket> clazz = PacketRegistry.get(id);
+                if (clazz == null) {
+                    LOGGER.warn("Unknown packet ID: {}", id);
+                    return;
                 }
+
+                ReflactPacket packet = gson.fromJson(json, clazz);
+                handlePacket(event.getPlayer(), packet, id);
+
             } catch (Exception e) {
                 LOGGER.error("Error processing packet from {}: {}", event.getPlayer().getUsername(), e.getMessage());
             }
         });
     }
-    private final java.util.Map<String, java.util.function.BiConsumer<Player, ReflactPacket>> handlers = new java.util.concurrent.ConcurrentHashMap<>();
 
-    public void registerHandler(String packetId, java.util.function.BiConsumer<Player, ReflactPacket> handler) {
+    public void registerHandler(String packetId, BiConsumer<Player, ReflactPacket> handler) {
         handlers.put(packetId, handler);
         LOGGER.info("Registered handler for packet ID: {}", packetId);
     }
     
-    private void handlePacket(Player player, ReflactPacket packet) {
-        LOGGER.info("Received packet {} from {}", packet.getPacketId(), player.getUsername());
-        
-        if (handlers.containsKey(packet.getPacketId())) {
-            handlers.get(packet.getPacketId()).accept(player, packet);
+    private void handlePacket(Player player, ReflactPacket packet, String id) {
+        LOGGER.info("Received packet {} from {}", id, player.getUsername());
+        if (handlers.containsKey(id)) {
+            handlers.get(id).accept(player, packet);
         } else {
-            LOGGER.warn("No handler found for packet ID: {}", packet.getPacketId());
+            LOGGER.warn("No handler found for packet ID: {}", id);
         }
     }
 
     public void sendPacket(Player player, ReflactPacket packet) {
-        String payloadString = ReflactProtocol.serialize(packet);
+        String id = PacketRegistry.getId(packet.getClass());
+        if (id == null) {
+            LOGGER.error("Unknown packet class: {}", packet.getClass());
+            return;
+        }
+        String payloadString = id + ":" + gson.toJson(packet);
         
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -65,7 +82,6 @@ public class NetworkManager {
         }
     }
     
-    // Helper to write String compatible with Minecraft PacketCodecs.STRING
     private void writeString(ByteArrayOutputStream out, String s) throws IOException {
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
         writeVarInt(out, bytes.length);
@@ -84,7 +100,6 @@ public class NetworkManager {
     }
     
     private String readStringFromBytes(byte[] data) {
-        // Simple manual VarInt reader + String decoder
         int i = 0;
         int max = 0;
         int result = 0;

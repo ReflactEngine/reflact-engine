@@ -5,17 +5,23 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.reflact.engine.ReflactEngine;
 import net.reflact.engine.data.ReflactPlayer;
-import net.reflact.engine.networking.packet.CastSpellPacket;
-import net.reflact.engine.networking.packet.ManaUpdatePacket;
+import net.reflact.common.network.packet.CastSpellPacket;
+import net.reflact.common.network.packet.ManaUpdatePacket;
 import net.reflact.engine.registry.ReflactRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import net.reflact.engine.spells.dynamic.DynamicSpell;
+import java.io.File;
+import java.io.FileReader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SpellManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(SpellManager.class);
+    private static final Gson GSON = new Gson();
     
     private final ReflactRegistry<Spell> spellRegistry = new ReflactRegistry<>("Spells");
     
@@ -30,11 +36,74 @@ public class SpellManager {
     private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
 
     public void init() {
+        loadSpells();
         ReflactEngine.getNetworkManager().registerHandler("cast_spell", (player, packet) -> {
             if (packet instanceof CastSpellPacket castPacket) {
-                cast(player, castPacket.getSpellId());
+                cast(player, castPacket.spellId());
             }
         });
+    }
+
+    private void loadSpells() {
+        File folder = new File("data/spells");
+        if (!folder.exists()) {
+            folder.mkdirs();
+            // Create default fireball spell if empty
+            createDefaultSpell(folder);
+        }
+        
+        File[] files = folder.listFiles((dir, name) -> name.endsWith(".json"));
+        if (files == null) return;
+        
+        for (File file : files) {
+            try (FileReader reader = new FileReader(file)) {
+                JsonObject json = GSON.fromJson(reader, JsonObject.class);
+                String id = file.getName().replace(".json", "");
+                
+                DynamicSpell spell = new DynamicSpell(id, json);
+                
+                // Parse Combo
+                List<ClickType> combo = new ArrayList<>();
+                if (json.has("combo")) {
+                    for (var el : json.getAsJsonArray("combo")) {
+                        try {
+                            combo.add(ClickType.valueOf(el.getAsString()));
+                        } catch (IllegalArgumentException e) {
+                            LOGGER.warn("Invalid click type in spell {}: {}", id, el.getAsString());
+                        }
+                    }
+                }
+                
+                register(spell, combo);
+            } catch (Exception e) {
+                LOGGER.error("Failed to load spell from file: " + file.getName(), e);
+            }
+        }
+    }
+
+    private void createDefaultSpell(File folder) {
+        // We will manually create the JSON for fireball here for convenience
+        String json = """
+        {
+          "name": "Fireball",
+          "mana_cost": 10.0,
+          "cooldown": 1000,
+          "combo": ["RIGHT", "LEFT", "RIGHT"],
+          "effects": [
+            {
+              "type": "projectile",
+              "entity_type": "fireball",
+              "speed": 1.5
+            }
+          ]
+        }
+        """;
+        // Actually writing it is safer with FileWriter
+        try (java.io.FileWriter writer = new java.io.FileWriter(new File(folder, "fireball.json"))) {
+            writer.write(json);
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void register(Spell spell, List<ClickType> combo) {

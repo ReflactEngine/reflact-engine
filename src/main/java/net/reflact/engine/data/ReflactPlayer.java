@@ -1,6 +1,7 @@
 package net.reflact.engine.data;
 
-import net.reflact.engine.attributes.AttributeContainer;
+import net.minestom.server.entity.Player;
+import net.reflact.common.attribute.AttributeContainer;
 
 import java.util.UUID;
 

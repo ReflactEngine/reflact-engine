@@ -6,8 +6,8 @@ import net.minestom.server.entity.damage.Damage;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.entity.EntityAttackEvent;
+import net.reflact.common.attribute.RpgAttributes;
 import net.reflact.engine.ReflactEngine;
-import net.reflact.engine.attributes.RpgAttributes;
 import net.reflact.engine.data.ReflactPlayer;
 
 public class DamageListener {

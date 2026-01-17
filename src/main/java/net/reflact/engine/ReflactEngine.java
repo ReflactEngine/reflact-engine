@@ -1,12 +1,11 @@
 package net.reflact.engine;
 
 import net.minestom.server.MinecraftServer;
-import net.reflact.engine.attributes.RpgAttributes;
+import net.reflact.common.attribute.RpgAttributes;
+import net.reflact.common.item.CustomItem;
 import net.reflact.engine.commands.BuildModeCommand;
 import net.reflact.engine.commands.RankCommand;
-import net.reflact.engine.item.ItemTier;
-import net.reflact.engine.item.ItemType;
-import net.reflact.engine.item.RpgItem;
+import net.reflact.engine.database.DatabaseManager;
 import net.reflact.engine.listeners.EngineListeners;
 import net.reflact.engine.managers.ItemManager;
 import net.reflact.engine.managers.PlayerManager;
@@ -26,19 +25,14 @@ public class ReflactEngine {
     private static NetworkManager networkManager;
     private static ItemManager itemManager;
 
-    private static AxiomManager axiomManager;
+    private static net.reflact.engine.axiom.AxiomManager axiomManager;
 
-    private static net.reflact.engine.database.DatabaseManager databaseManager;
+    private static DatabaseManager databaseManager;
 
     public static void init() {
         LOGGER.info("ReflactEngine initialized!");
         
-        // Register Packets
-        net.reflact.engine.networking.ReflactProtocol.register("mana_update", net.reflact.engine.networking.packet.ManaUpdatePacket.class);
-        net.reflact.engine.networking.ReflactProtocol.register("cast_spell", net.reflact.engine.networking.packet.CastSpellPacket.class);
-        net.reflact.engine.networking.ReflactProtocol.register("sync_item", net.reflact.engine.networking.packet.S2CSyncItemPacket.class);
-        
-        databaseManager = new net.reflact.engine.database.DatabaseManager();
+        databaseManager = new DatabaseManager();
         databaseManager.init();
         
         playerManager = new PlayerManager();
@@ -53,11 +47,11 @@ public class ReflactEngine {
         axiomManager.init();
         
         // Register default spells
-        spellManager.register(new FireballSpell(), List.of(ClickType.RIGHT, ClickType.LEFT, ClickType.RIGHT));
+        // spellManager.register(new FireballSpell(), List.of(ClickType.RIGHT, ClickType.LEFT, ClickType.RIGHT));
         
         // Load Items from DB
-        List<net.reflact.engine.item.RpgItem> items = databaseManager.loadItems();
-        for (net.reflact.engine.item.RpgItem item : items) {
+        List<CustomItem> items = databaseManager.loadItems();
+        for (CustomItem item : items) {
             itemManager.register(item);
         }
         
@@ -75,7 +69,7 @@ public class ReflactEngine {
         net.reflact.engine.tasks.ManaTask.start();
     }
     
-    public static net.reflact.engine.database.DatabaseManager getDatabaseManager() {
+    public static DatabaseManager getDatabaseManager() {
         return databaseManager;
     }
 

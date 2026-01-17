@@ -2,19 +2,19 @@ package net.reflact.engine.managers;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.minestom.server.entity.EquipmentSlot;
-import net.minestom.server.entity.Player;
-import net.minestom.server.item.ItemStack;
 import net.minestom.server.component.DataComponents;
+import net.minestom.server.entity.EquipmentSlot;
+import net.minestom.server.entity.GameMode;
+import net.minestom.server.entity.Player;
+import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
+import net.minestom.server.event.player.PlayerSpawnEvent;
+import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.component.CustomData;
+import net.reflact.common.attribute.*;
+import net.reflact.common.item.CustomItem;
 import net.reflact.engine.ReflactEngine;
-import net.reflact.engine.attributes.Attribute;
-import net.reflact.engine.attributes.AttributeModifier;
-import net.reflact.engine.attributes.AttributeRegistry;
-import net.reflact.engine.attributes.RpgAttributes;
-import net.reflact.engine.data.Rank;
 import net.reflact.engine.data.ReflactPlayer;
-import net.reflact.engine.item.RpgItem;
+import net.reflact.common.network.packet.ManaUpdatePacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,7 +114,7 @@ public class PlayerManager {
             if (templateId.isEmpty()) continue;
             
             // Lookup Template
-            RpgItem template = ReflactEngine.getItemManager().getTemplate(templateId);
+            CustomItem template = ReflactEngine.getItemManager().getTemplate(templateId).orElse(null);
             if (template == null) continue;
             
             // Apply attributes

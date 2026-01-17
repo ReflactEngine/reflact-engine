@@ -13,6 +13,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":common"))
     // using a recent commit hash for Minestom, ensuring we are up to date
     // Note: User can update this to the specific commit they want
     implementation("com.github.Minestom:Minestom:2026.01.08-1.21.11")

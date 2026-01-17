@@ -1,13 +1,13 @@
 package net.reflact.engine.spells;
 
-import net.minestom.server.coordinate.Pos;
-import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
+import net.minestom.server.coordinate.Pos;
+import net.minestom.server.coordinate.Vec;
+import net.reflact.common.attribute.RpgAttributes;
 import net.reflact.engine.ReflactEngine;
-import net.reflact.engine.attributes.RpgAttributes;
 import net.reflact.engine.data.ReflactPlayer;
 
 public class FireballSpell implements Spell {
@@ -45,7 +45,9 @@ public class FireballSpell implements Spell {
         Vec direction = startPos.direction();
 
         Entity fireball = new Entity(EntityType.FIREBALL);
-        fireball.setInstance(instance, startPos.add(direction));
+        // Cast to specific meta interface if needed, or just rely on default
+        // FireballMeta meta = (FireballMeta) fireball.getEntityMeta();
+        fireball.setInstance(instance, startPos);
         fireball.setVelocity(direction.mul(20)); // Speed
 
         // Logic for collision would go here (Tick listener or collision event)
