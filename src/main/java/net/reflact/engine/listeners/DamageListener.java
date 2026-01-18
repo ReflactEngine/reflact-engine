@@ -16,6 +16,13 @@ public class DamageListener {
             if (!(event.getEntity() instanceof Player attacker)) return;
             if (!(event.getTarget() instanceof LivingEntity target)) return;
             
+            // Cancel vanilla attack to override damage calculation
+            // Note: This removes vanilla knockback. We can re-add it if needed.
+            // event.setCancelled(true); // Minestom: Cancelling this might stop the attack packet? 
+            // Actually, in Minestom, EntityAttackEvent is purely informational/cancellable for the 'attack' action. 
+            // It does NOT automatically deal damage in all versions. 
+            // But to be safe and ensure we don't double damage, we rely on our manual damage call.
+            
             ReflactPlayer attackerData = ReflactEngine.getPlayerManager().getPlayer(attacker.getUuid());
             if (attackerData == null) return;
             
@@ -37,11 +44,10 @@ public class DamageListener {
             }
             
             // 3. Apply Damage
-            // Minestom 1.21 Damage API
             target.damage(new Damage(DamageType.PLAYER_ATTACK, attacker, attacker, null, (float) finalDamage));
             
-            // Debug message
-            // attacker.sendMessage("Dealt " + String.format("%.1f", finalDamage) + " damage!");
+            // Apply small Knockback (manually, since we might be cancelling vanilla logic or Minestom doesn't do it auto for custom damage)
+            target.takeKnockback(0.4f, Math.sin(attacker.getPosition().yaw() * Math.PI / 180), -Math.cos(attacker.getPosition().yaw() * Math.PI / 180));
         });
     }
 }

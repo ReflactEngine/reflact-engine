@@ -25,6 +25,10 @@ public class ItemManager {
     public Optional<CustomItem> getTemplate(String id) {
         return itemRegistry.get(id);
     }
+    
+    public java.util.Collection<String> getTemplateIds() {
+        return itemRegistry.getKeys();
+    }
 
     public CustomItem createUnique(String itemId) {
         Optional<CustomItem> templateOpt = itemRegistry.get(itemId);

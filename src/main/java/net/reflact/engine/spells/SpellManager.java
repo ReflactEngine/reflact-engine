@@ -5,6 +5,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.reflact.engine.ReflactEngine;
 import net.reflact.engine.data.ReflactPlayer;
+import net.reflact.common.attribute.RpgAttributes;
 import net.reflact.common.network.packet.CastSpellPacket;
 import net.reflact.common.network.packet.ManaUpdatePacket;
 import net.reflact.engine.registry.ReflactRegistry;
@@ -18,6 +19,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import net.reflact.common.network.packet.CastSlotPacket;
 
 public class SpellManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(SpellManager.class);
@@ -40,6 +43,20 @@ public class SpellManager {
         ReflactEngine.getNetworkManager().registerHandler("cast_spell", (player, packet) -> {
             if (packet instanceof CastSpellPacket castPacket) {
                 cast(player, castPacket.spellId());
+            }
+        });
+        
+        ReflactEngine.getNetworkManager().registerHandler("cast_slot", (player, packet) -> {
+            if (packet instanceof CastSlotPacket slotPacket) {
+                ReflactPlayer data = ReflactEngine.getPlayerManager().getPlayer(player.getUuid());
+                if (data != null) {
+                    String spellId = data.getSpellInSlot(slotPacket.slotIndex());
+                    if (spellId != null) {
+                        cast(player, spellId);
+                    } else {
+                        player.sendActionBar(Component.text("No spell in slot " + slotPacket.slotIndex(), NamedTextColor.RED));
+                    }
+                }
             }
         });
     }
@@ -128,11 +145,18 @@ public class SpellManager {
         List<ClickType> buffer = playerBuffers.computeIfAbsent(uuid, k -> new ArrayList<>());
         buffer.add(click);
         
+        // Generate Combo String for Display
+        StringBuilder comboStr = new StringBuilder();
+        for (ClickType c : buffer) {
+            comboStr.append(c == ClickType.RIGHT ? "R" : "L").append(" - ");
+        }
+        
         if (combos.containsKey(buffer)) {
             String spellId = combos.get(buffer);
             boolean success = cast(player, spellId);
             if (success || !isOnCooldown(uuid, spellId)) { 
                 playerBuffers.remove(uuid);
+                player.sendActionBar(Component.text("Cast: " + spellRegistry.get(spellId).get().getName(), NamedTextColor.GREEN));
             }
         } else {
             boolean possible = false;
@@ -142,8 +166,14 @@ public class SpellManager {
                     break;
                 }
             }
-            if (!possible) {
+            
+            if (possible) {
+                // Show current progress
+                player.sendActionBar(Component.text(comboStr.toString() + "?", NamedTextColor.YELLOW));
+            } else {
+                // Fizzle
                 playerBuffers.remove(uuid);
+                player.sendActionBar(Component.text(comboStr.toString() + "Fizzle", NamedTextColor.RED));
             }
         }
     }
@@ -177,7 +207,7 @@ public class SpellManager {
             reflactPlayer.setCurrentMana(reflactPlayer.getCurrentMana() - spell.getManaCost());
             
             // Send Mana Update using new Packet system
-            ReflactEngine.getNetworkManager().sendPacket(player, new ManaUpdatePacket(reflactPlayer.getCurrentMana()));
+            ReflactEngine.getNetworkManager().sendPacket(player, new ManaUpdatePacket(reflactPlayer.getCurrentMana(), reflactPlayer.getAttributes().getValue(RpgAttributes.MANA)));
         }
 
         cooldowns.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>())

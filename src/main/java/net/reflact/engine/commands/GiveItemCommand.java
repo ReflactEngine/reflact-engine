@@ -12,6 +12,12 @@ public class GiveItemCommand extends Command {
         super("giveitem");
 
         var itemIdArg = ArgumentType.String("itemId");
+        
+        itemIdArg.setSuggestionCallback((sender, context, suggestion) -> {
+            for (String id : ReflactEngine.getItemManager().getTemplateIds()) {
+                 suggestion.addEntry(new net.minestom.server.command.builder.suggestion.SuggestionEntry(id));
+            }
+        });
 
         addSyntax((sender, context) -> {
             String itemId = context.get(itemIdArg);

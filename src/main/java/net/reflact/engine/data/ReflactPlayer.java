@@ -12,6 +12,7 @@ public class ReflactPlayer {
     private transient boolean buildMode; // Not saved to disk
     private transient AttributeContainer attributes;
     private transient double currentMana;
+    private final java.util.Map<Integer, String> spellSlots = new java.util.HashMap<>();
 
     public ReflactPlayer(UUID uuid, String username) {
         this.uuid = uuid;
@@ -20,6 +21,28 @@ public class ReflactPlayer {
         this.buildMode = false;
         this.attributes = new AttributeContainer();
         this.currentMana = 100.0; // Default, should be loaded or calculated
+        
+        // Default Loadout
+        spellSlots.put(1, "fireball");
+        spellSlots.put(2, "heal");
+    }
+    
+    public String getSpellInSlot(int slot) {
+        if (spellSlots == null) {
+            // Lazy init for loaded data that might be missing this field
+            try {
+                java.lang.reflect.Field field = this.getClass().getDeclaredField("spellSlots");
+                field.setAccessible(true);
+                field.set(this, new java.util.HashMap<Integer, String>());
+                // Set defaults if empty
+                this.spellSlots.put(1, "fireball");
+                this.spellSlots.put(2, "heal");
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+        return spellSlots.get(slot);
     }
 
     public UUID getUuid() {

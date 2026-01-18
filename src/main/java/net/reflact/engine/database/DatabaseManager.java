@@ -53,6 +53,7 @@ public class DatabaseManager {
     private void seedDefaults() {
         LOGGER.info("Seeding default data...");
         
+        // 1. Weapon: Novice Blade
         CustomItem sword = CustomItem.builder("starter_sword", ItemType.WEAPON, ItemTier.NORMAL)
                 .name("Novice Blade")
                 .attr("attack_damage", 5.0)
@@ -62,6 +63,7 @@ public class DatabaseManager {
                 .build();
         saveItem(sword);
         
+        // 2. Chestplate: Aegis
         CustomItem chestplate = CustomItem.builder("mythic_chest", ItemType.CHESTPLATE, ItemTier.MYTHIC)
                 .name("Aegis of Valor")
                 .attr("health", 100.0)
@@ -71,6 +73,46 @@ public class DatabaseManager {
                 .model(2)
                 .build();
         saveItem(chestplate);
+        
+        // 3. Weapon: Dagger (High Speed, Low Dmg)
+        CustomItem dagger = CustomItem.builder("assassin_dagger", ItemType.WEAPON, ItemTier.RARE)
+                .name("Shadow Fang")
+                .attr("attack_damage", 3.0)
+                .attr("attack_speed", 2.0)
+                .attr("crit_chance", 0.2) // Assuming attribute exists or will be ignored
+                .lore("Perfect for quick strikes.")
+                .model(3)
+                .build();
+        saveItem(dagger);
+
+        // 4. Helmet: Warden's Helm
+        CustomItem helm = CustomItem.builder("warden_helm", ItemType.HELMET, ItemTier.LEGENDARY)
+                .name("Warden's Gaze")
+                .attr("defense", 20.0)
+                .attr("intelligence", 10.0)
+                .lore("Sees all, knows all.")
+                .model(4)
+                .build();
+        saveItem(helm);
+
+        // 5. Boots: Speed
+        CustomItem boots = CustomItem.builder("hermes_boots", ItemType.BOOTS, ItemTier.UNIQUE)
+                .name("Winged Sandals")
+                .attr("walk_speed", 0.05) // Vanilla base is ~0.1, so +0.05 is significant
+                .lore("Fly like the wind.")
+                .model(5)
+                .build();
+        saveItem(boots);
+
+        // 6. Accessory: Mana Ring
+        CustomItem ring = CustomItem.builder("mana_ring", ItemType.ACCESSORY, ItemTier.RARE)
+                .name("Sapphire Band")
+                .attr("mana", 50.0)
+                .attr("mana_regen", 2.0)
+                .lore("Crackles with arcane energy.")
+                .model(6)
+                .build();
+        saveItem(ring);
     }
     
     public void saveItem(CustomItem item) {

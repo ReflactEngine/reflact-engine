@@ -22,7 +22,7 @@ public class ManaTask {
                     current = Math.min(maxMana, current + regen);
                     data.setCurrentMana(current);
                     // Send packet
-                    ReflactEngine.getNetworkManager().sendPacket(player, new ManaUpdatePacket(current));
+                    ReflactEngine.getNetworkManager().sendPacket(player, new ManaUpdatePacket(current, maxMana));
                 }
             }
             return net.minestom.server.timer.TaskSchedule.tick(20);

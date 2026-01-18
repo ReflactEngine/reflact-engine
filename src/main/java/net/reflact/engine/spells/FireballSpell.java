@@ -6,6 +6,7 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.particle.Particle;
 import net.reflact.common.attribute.RpgAttributes;
 import net.reflact.engine.ReflactEngine;
 import net.reflact.engine.data.ReflactPlayer;
@@ -45,13 +46,60 @@ public class FireballSpell implements Spell {
         Vec direction = startPos.direction();
 
         Entity fireball = new Entity(EntityType.FIREBALL);
-        // Cast to specific meta interface if needed, or just rely on default
-        // FireballMeta meta = (FireballMeta) fireball.getEntityMeta();
+        fireball.setNoGravity(true); // Fix "weird physics" / dropping
         fireball.setInstance(instance, startPos);
-        fireball.setVelocity(direction.mul(20)); // Speed
+        
+        // Manual Projectile Logic
+        long spawnTime = System.currentTimeMillis();
+        net.minestom.server.MinecraftServer.getSchedulerManager().submitTask(() -> {
+            if (fireball.isRemoved()) return net.minestom.server.timer.TaskSchedule.stop();
+            
+            // 1. Despawn after 5 seconds
+            if (System.currentTimeMillis() - spawnTime > 5000) {
+                fireball.remove(); // This definitely removes it
+                return net.minestom.server.timer.TaskSchedule.stop();
+            }
 
-        // Logic for collision would go here (Tick listener or collision event)
-        // For this basic example, we just spawn it.
+            // 2. Move
+            double speed = 1.0; // Blocks per tick
+            Pos current = fireball.getPosition();
+            Pos next = current.add(direction.mul(speed));
+            
+            // 3. Collision Check (Simple Raycast logic)
+            // Check for entities nearby
+            var nearby = instance.getNearbyEntities(next, 1.0);
+            for (Entity target : nearby) {
+                if (target != caster && target != fireball && target instanceof net.minestom.server.entity.LivingEntity living) {
+                    // Hit!
+                    living.damage(new net.minestom.server.entity.damage.Damage(net.minestom.server.entity.damage.DamageType.ON_FIRE, fireball, caster, null, (float)damage));
+                    fireball.remove();
+                    
+                    // Explosion Effect
+                       instance.sendGroupedPacket(new net.minestom.server.network.packet.server.play.ParticlePacket(
+                        Particle.EXPLOSION,
+                        next.x(), next.y(), next.z(),
+                        0.5f, 0.5f, 0.5f, 0f, 10
+                    ));
+                    
+                    return net.minestom.server.timer.TaskSchedule.stop();
+                }
+            }
+            
+            // Check for block collision
+            if (instance.getBlock(next).isSolid()) {
+                 fireball.remove();
+                    instance.sendGroupedPacket(new net.minestom.server.network.packet.server.play.ParticlePacket(
+                        Particle.EXPLOSION,
+                        next.x(), next.y(), next.z(),
+                        0.5f, 0.5f, 0.5f, 0f, 10
+                    ));
+                 return net.minestom.server.timer.TaskSchedule.stop();
+            }
+
+            fireball.teleport(next);
+            return net.minestom.server.timer.TaskSchedule.tick(1);
+        });
+
         caster.sendMessage("You cast Fireball! (Est. Damage: " + String.format("%.1f", damage) + " [Intel: " + (int)intel + "])");
     }
 }

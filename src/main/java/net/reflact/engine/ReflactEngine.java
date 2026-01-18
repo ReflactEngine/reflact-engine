@@ -47,7 +47,8 @@ public class ReflactEngine {
         axiomManager.init();
         
         // Register default spells
-        // spellManager.register(new FireballSpell(), List.of(ClickType.RIGHT, ClickType.LEFT, ClickType.RIGHT));
+        spellManager.register(new FireballSpell(), List.of(ClickType.RIGHT, ClickType.LEFT, ClickType.RIGHT));
+        spellManager.register(new net.reflact.engine.spells.HealSpell(), List.of(ClickType.RIGHT, ClickType.RIGHT, ClickType.RIGHT));
         
         // Load Items from DB
         List<CustomItem> items = databaseManager.loadItems();
@@ -57,6 +58,7 @@ public class ReflactEngine {
         
         // Register events
         EngineListeners.register(MinecraftServer.getGlobalEventHandler());
+        net.reflact.engine.items.WandItem.register(MinecraftServer.getGlobalEventHandler());
 
         // Register commands
         var commandManager = MinecraftServer.getCommandManager();
