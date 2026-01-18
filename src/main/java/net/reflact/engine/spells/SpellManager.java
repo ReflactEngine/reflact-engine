@@ -12,11 +12,6 @@ import net.reflact.engine.registry.ReflactRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import net.reflact.engine.spells.dynamic.DynamicSpell;
-import java.io.File;
-import java.io.FileReader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,22 +19,13 @@ import net.reflact.common.network.packet.CastSlotPacket;
 
 public class SpellManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(SpellManager.class);
-    private static final Gson GSON = new Gson();
     
     private final ReflactRegistry<Spell> spellRegistry = new ReflactRegistry<>("Spells");
-    
-    // Combo -> Spell ID
-    private final Map<List<ClickType>, String> combos = new HashMap<>();
-    
-    // Player -> Current Combo Buffer
-    private final Map<UUID, List<ClickType>> playerBuffers = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> lastClickTime = new ConcurrentHashMap<>();
     
     // Cooldowns
     private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
 
     public void init() {
-        loadSpells();
         ReflactEngine.getNetworkManager().registerHandler("cast_spell", (player, packet) -> {
             if (packet instanceof CastSpellPacket castPacket) {
                 cast(player, castPacket.spellId());
@@ -61,128 +47,17 @@ public class SpellManager {
         });
     }
 
-    private void loadSpells() {
-        File folder = new File("data/spells");
-        if (!folder.exists()) {
-            folder.mkdirs();
-            // Create default fireball spell if empty
-            createDefaultSpell(folder);
-        }
-        
-        File[] files = folder.listFiles((dir, name) -> name.endsWith(".json"));
-        if (files == null) return;
-        
-        for (File file : files) {
-            try (FileReader reader = new FileReader(file)) {
-                JsonObject json = GSON.fromJson(reader, JsonObject.class);
-                String id = file.getName().replace(".json", "");
-                
-                DynamicSpell spell = new DynamicSpell(id, json);
-                
-                // Parse Combo
-                List<ClickType> combo = new ArrayList<>();
-                if (json.has("combo")) {
-                    for (var el : json.getAsJsonArray("combo")) {
-                        try {
-                            combo.add(ClickType.valueOf(el.getAsString()));
-                        } catch (IllegalArgumentException e) {
-                            LOGGER.warn("Invalid click type in spell {}: {}", id, el.getAsString());
-                        }
-                    }
-                }
-                
-                register(spell, combo);
-            } catch (Exception e) {
-                LOGGER.error("Failed to load spell from file: " + file.getName(), e);
-            }
-        }
-    }
-
-    private void createDefaultSpell(File folder) {
-        // We will manually create the JSON for fireball here for convenience
-        String json = """
-        {
-          "name": "Fireball",
-          "mana_cost": 10.0,
-          "cooldown": 1000,
-          "combo": ["RIGHT", "LEFT", "RIGHT"],
-          "effects": [
-            {
-              "type": "projectile",
-              "entity_type": "fireball",
-              "speed": 1.5
-            }
-          ]
-        }
-        """;
-        // Actually writing it is safer with FileWriter
-        try (java.io.FileWriter writer = new java.io.FileWriter(new File(folder, "fireball.json"))) {
-            writer.write(json);
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void register(Spell spell, List<ClickType> combo) {
+    public void register(Spell spell) {
         spellRegistry.register(spell.getId(), spell);
-        if (combo != null && !combo.isEmpty()) {
-            combos.put(combo, spell.getId());
-            LOGGER.info("Registered spell: {} with combo {}", spell.getName(), combo);
-        } else {
-            LOGGER.info("Registered spell: {} (No Combo)", spell.getName());
-        }
+        LOGGER.info("Registered spell: {}", spell.getName());
     }
     
-    public void processClick(Player player, ClickType click) {
-        UUID uuid = player.getUuid();
-        long now = System.currentTimeMillis();
-        
-        if (now - lastClickTime.getOrDefault(uuid, 0L) > 1500) {
-            playerBuffers.remove(uuid);
-        }
-        lastClickTime.put(uuid, now);
-        
-        List<ClickType> buffer = playerBuffers.computeIfAbsent(uuid, k -> new ArrayList<>());
-        buffer.add(click);
-        
-        // Generate Combo String for Display
-        StringBuilder comboStr = new StringBuilder();
-        for (ClickType c : buffer) {
-            comboStr.append(c == ClickType.RIGHT ? "R" : "L").append(" - ");
-        }
-        
-        if (combos.containsKey(buffer)) {
-            String spellId = combos.get(buffer);
-            boolean success = cast(player, spellId);
-            if (success || !isOnCooldown(uuid, spellId)) { 
-                playerBuffers.remove(uuid);
-                player.sendActionBar(Component.text("Cast: " + spellRegistry.get(spellId).get().getName(), NamedTextColor.GREEN));
-            }
-        } else {
-            boolean possible = false;
-            for (List<ClickType> key : combos.keySet()) {
-                if (key.size() >= buffer.size() && key.subList(0, buffer.size()).equals(buffer)) {
-                    possible = true;
-                    break;
-                }
-            }
-            
-            if (possible) {
-                // Show current progress
-                player.sendActionBar(Component.text(comboStr.toString() + "?", NamedTextColor.YELLOW));
-            } else {
-                // Fizzle
-                playerBuffers.remove(uuid);
-                player.sendActionBar(Component.text(comboStr.toString() + "Fizzle", NamedTextColor.RED));
-            }
-        }
-    }
-
     public Optional<Spell> getSpell(String id) {
         return spellRegistry.get(id);
     }
 
     public boolean cast(Player player, String spellId) {
+        LOGGER.info("Attempting to cast spell: {} for player {}", spellId, player.getUsername());
         Optional<Spell> spellOpt = spellRegistry.get(spellId);
         if (spellOpt.isEmpty()) {
             LOGGER.warn("Player {} tried to cast unknown spell {}", player.getUsername(), spellId);
@@ -206,7 +81,6 @@ public class SpellManager {
             }
             reflactPlayer.setCurrentMana(reflactPlayer.getCurrentMana() - spell.getManaCost());
             
-            // Send Mana Update using new Packet system
             ReflactEngine.getNetworkManager().sendPacket(player, new ManaUpdatePacket(reflactPlayer.getCurrentMana(), reflactPlayer.getAttributes().getValue(RpgAttributes.MANA)));
         }
 

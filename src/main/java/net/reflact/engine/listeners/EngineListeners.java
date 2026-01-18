@@ -52,20 +52,25 @@ public class EngineListeners {
         });
         
         // Spell Casting - Left Click (Swing)
+        // Removed Combo Logic
+        /*
         handler.addListener(PlayerHandAnimationEvent.class, event -> {
             Material mainHand = event.getPlayer().getItemInMainHand().material();
             if (mainHand == Material.STICK || mainHand == Material.BLAZE_ROD) {
                 ReflactEngine.getSpellManager().processClick(event.getPlayer(), ClickType.LEFT);
             }
         });
+        */
         
         // Spell Casting - Right Click (Use Item)
+        /*
         handler.addListener(PlayerUseItemEvent.class, event -> {
-            Material mainHand = event.getPlayer().getItemInMainHand().material();
-            if (mainHand == Material.STICK || mainHand == Material.BLAZE_ROD) {
-                ReflactEngine.getSpellManager().processClick(event.getPlayer(), ClickType.RIGHT);
-            }
+            // Material mainHand = event.getPlayer().getItemInMainHand().material();
+            // if (mainHand == Material.STICK || mainHand == Material.BLAZE_ROD) {
+            //    ReflactEngine.getSpellManager().processClick(event.getPlayer(), ClickType.RIGHT);
+            // }
         });
+        */
         
         // Stats
         EquipmentListener.register(handler);
