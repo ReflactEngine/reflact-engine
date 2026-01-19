@@ -11,7 +11,7 @@ public class ReflactPlayer {
     private Rank rank;
     private transient boolean buildMode; // Not saved to disk
     private transient AttributeContainer attributes;
-    private transient double currentMana;
+    private double currentMana;
     private final java.util.Map<Integer, String> spellSlots = new java.util.HashMap<>();
     private final java.util.Map<String, Integer> questProgress = new java.util.HashMap<>();
     
@@ -113,6 +113,10 @@ public class ReflactPlayer {
                 e.printStackTrace();
                 return null;
             }
+        }
+        if (spellSlots.isEmpty()) {
+             this.spellSlots.put(1, "fireball");
+             this.spellSlots.put(2, "heal");
         }
         return spellSlots.get(slot);
     }

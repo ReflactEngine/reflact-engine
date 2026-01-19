@@ -31,6 +31,7 @@ public class ReflactEngine {
     private static net.reflact.engine.npc.NpcManager npcManager;
     private static net.reflact.engine.quest.QuestManager questManager;
     private static net.reflact.engine.guild.GuildManager guildManager;
+    private static net.reflact.engine.party.PartyManager partyManager;
     private static net.reflact.engine.classes.ClassManager classManager;
 
     private static DatabaseManager databaseManager;
@@ -51,6 +52,7 @@ public class ReflactEngine {
         npcManager = new net.reflact.engine.npc.NpcManager();
         questManager = new net.reflact.engine.quest.QuestManager();
         guildManager = new net.reflact.engine.guild.GuildManager();
+        partyManager = new net.reflact.engine.party.PartyManager();
         classManager = new net.reflact.engine.classes.ClassManager();
         
         RpgAttributes.registerAll();
@@ -61,6 +63,7 @@ public class ReflactEngine {
         npcManager.init();
         questManager.init();
         guildManager.init();
+        partyManager.init();
         classManager.init();
         
         // Register default spells
@@ -92,6 +95,16 @@ public class ReflactEngine {
         
         // Start Tasks
         net.reflact.engine.tasks.ManaTask.start();
+        
+        // Map Update Task
+        /*
+        MinecraftServer.getSchedulerManager().submitTask(() -> {
+            for (net.minestom.server.entity.Player p : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
+                mapManager.sendMapData(p);
+            }
+            return net.minestom.server.timer.TaskSchedule.seconds(5);
+        });
+        */
     }
     
     public static DatabaseManager getDatabaseManager() {
@@ -128,6 +141,10 @@ public class ReflactEngine {
 
     public static net.reflact.engine.guild.GuildManager getGuildManager() {
         return guildManager;
+    }
+
+    public static net.reflact.engine.party.PartyManager getPartyManager() {
+        return partyManager;
     }
     
     public static net.reflact.engine.classes.ClassManager getClassManager() {

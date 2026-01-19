@@ -50,6 +50,12 @@ public class PlayerManager {
         if (file.exists()) {
             try (FileReader reader = new FileReader(file)) {
                 player = GSON.fromJson(reader, ReflactPlayer.class);
+                // Fix Mana if 0 (due to transient or first load)
+                if (player.getCurrentMana() <= 1.0) {
+                    double maxMana = player.getAttributes().getValue(RpgAttributes.MANA);
+                    if (maxMana <= 0) maxMana = 100.0; // Fallback
+                    player.setCurrentMana(maxMana);
+                }
             } catch (IOException e) {
                 LOGGER.error("Failed to load player data for " + uuid, e);
                 player = new ReflactPlayer(uuid, username);
