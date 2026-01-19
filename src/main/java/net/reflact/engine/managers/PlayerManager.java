@@ -131,6 +131,25 @@ public class PlayerManager {
             }
         }
         
+        // 3. Iterate Accessories
+        for (Map.Entry<Integer, String> entry : data.getAccessories().entrySet()) {
+            int slot = entry.getKey();
+            String itemId = entry.getValue();
+            if (itemId == null || itemId.isEmpty()) continue;
+            
+            CustomItem template = ReflactEngine.getItemManager().getTemplate(itemId).orElse(null);
+            if (template == null) continue;
+            
+             for (Map.Entry<String, Double> attrEntry : template.getAttributes().entrySet()) {
+                String attrId = attrEntry.getKey();
+                Attribute attr = AttributeRegistry.get(attrId).orElse(null);
+                if (attr != null) {
+                    String modId = "equip_acc_" + slot + "_" + attrId;
+                    data.getAttributes().addModifier(attr, new AttributeModifier(modId, attrEntry.getValue(), AttributeModifier.Operation.ADD_NUMBER));
+                }
+            }
+        }
+        
         // Apply to Player Entity
         double health = data.getAttributes().getValue(RpgAttributes.HEALTH);
         double walkSpeed = data.getAttributes().getValue(RpgAttributes.WALK_SPEED);

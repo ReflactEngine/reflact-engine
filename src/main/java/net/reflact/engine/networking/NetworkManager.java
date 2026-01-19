@@ -56,6 +56,15 @@ public class NetworkManager {
         LOGGER.info("Registered handler for packet ID: {}", packetId);
     }
     
+    public void onPlayerConfiguration(Player player) {
+        // Send Register packet to inform client about our channel
+        // This is crucial for Fabric API's ClientPlayNetworking to allow sending packets
+        String channel = "minecraft:register";
+        byte[] data = "reflact:main".getBytes(StandardCharsets.UTF_8);
+        player.sendPacket(new PluginMessagePacket(channel, data));
+        LOGGER.info("Sent channel registration to {}", player.getUsername());
+    }
+    
     private void handlePacket(Player player, ReflactPacket packet, String id) {
         LOGGER.info("Received packet {} from {}", id, player.getUsername());
         if (handlers.containsKey(id)) {
@@ -100,11 +109,13 @@ public class NetworkManager {
     }
     
     private String readStringFromBytes(byte[] data) {
+        if (data.length == 0) return "";
         int i = 0;
         int max = 0;
         int result = 0;
         byte b;
         do {
+            if (i >= data.length) throw new RuntimeException("VarInt too big or data too short");
             b = data[i++];
             result |= (b & 0x7F) << max;
             max += 7;
@@ -112,6 +123,12 @@ public class NetworkManager {
         } while ((b & 0x80) != 0);
         
         int length = result;
+        if (i + length > data.length) {
+             // Fallback if length is wrong or data is just the string bytes
+             // This can happen if the packet didn't include length prefix for some reason
+             // but we'll stick to the protocol for now and just log/throw safely
+             throw new RuntimeException("String length mismatch: expected " + length + ", got " + (data.length - i));
+        }
         return new String(data, i, length, StandardCharsets.UTF_8);
     }
 }

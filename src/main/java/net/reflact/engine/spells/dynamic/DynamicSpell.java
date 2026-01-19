@@ -21,6 +21,17 @@ public class DynamicSpell implements Spell {
         this.id = id;
         load(config);
     }
+    
+    public DynamicSpell(String id, String name, long cooldown, double manaCost) {
+        this.id = id;
+        this.name = name;
+        this.cooldown = cooldown;
+        this.manaCost = manaCost;
+    }
+    
+    public void addEffect(SpellEffect effect) {
+        this.effects.add(effect);
+    }
 
     private void load(JsonObject config) {
         this.name = config.get("name").getAsString();

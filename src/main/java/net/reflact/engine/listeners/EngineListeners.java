@@ -6,6 +6,7 @@ import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
 import net.minestom.server.event.player.PlayerBlockBreakEvent;
 import net.minestom.server.event.player.PlayerBlockPlaceEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
+import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.event.player.PlayerHandAnimationEvent;
 import net.minestom.server.event.player.PlayerUseItemEvent;
 import net.minestom.server.item.Material;
@@ -29,6 +30,13 @@ public class EngineListeners {
         // Data Loading
         handler.addListener(AsyncPlayerConfigurationEvent.class, event -> {
             ReflactEngine.getPlayerManager().loadPlayer(event.getPlayer().getUuid(), event.getPlayer().getUsername());
+            event.setSpawningInstance(MinecraftServer.getInstanceManager().getInstances().iterator().next());
+        });
+        
+        handler.addListener(PlayerSpawnEvent.class, event -> {
+             if (event.isFirstSpawn()) {
+                 ReflactEngine.getMapManager().sendMapData(event.getPlayer());
+             }
         });
 
         // Data Saving

@@ -26,6 +26,12 @@ public class ReflactEngine {
     private static ItemManager itemManager;
 
     private static net.reflact.engine.axiom.AxiomManager axiomManager;
+    private static net.reflact.engine.managers.MapManager mapManager;
+    
+    private static net.reflact.engine.npc.NpcManager npcManager;
+    private static net.reflact.engine.quest.QuestManager questManager;
+    private static net.reflact.engine.guild.GuildManager guildManager;
+    private static net.reflact.engine.classes.ClassManager classManager;
 
     private static DatabaseManager databaseManager;
 
@@ -40,15 +46,31 @@ public class ReflactEngine {
         networkManager = new NetworkManager();
         itemManager = new ItemManager();
         axiomManager = new net.reflact.engine.axiom.AxiomManager();
+        mapManager = new net.reflact.engine.managers.MapManager();
+        
+        npcManager = new net.reflact.engine.npc.NpcManager();
+        questManager = new net.reflact.engine.quest.QuestManager();
+        guildManager = new net.reflact.engine.guild.GuildManager();
+        classManager = new net.reflact.engine.classes.ClassManager();
         
         RpgAttributes.registerAll();
         networkManager.init();
         spellManager.init();
         axiomManager.init();
         
+        npcManager.init();
+        questManager.init();
+        guildManager.init();
+        classManager.init();
+        
         // Register default spells
         spellManager.register(new FireballSpell());
         spellManager.register(new net.reflact.engine.spells.HealSpell());
+        
+        // Register Dynamic Spells
+        net.reflact.engine.spells.dynamic.DynamicSpell blink = new net.reflact.engine.spells.dynamic.DynamicSpell("blink", "Blink", 3000, 20);
+        blink.addEffect(new net.reflact.engine.spells.dynamic.TeleportEffect());
+        spellManager.register(blink);
         
         // Load Items from DB
         List<CustomItem> items = databaseManager.loadItems();
@@ -66,6 +88,7 @@ public class ReflactEngine {
         commandManager.register(new RankCommand());
         commandManager.register(new net.reflact.engine.commands.GiveItemCommand());
         commandManager.register(new net.reflact.engine.commands.GamemodeCommand());
+        commandManager.register(new net.reflact.engine.commands.AccessoriesCommand());
         
         // Start Tasks
         net.reflact.engine.tasks.ManaTask.start();
@@ -89,5 +112,25 @@ public class ReflactEngine {
     
     public static ItemManager getItemManager() {
         return itemManager;
+    }
+
+    public static net.reflact.engine.managers.MapManager getMapManager() {
+        return mapManager;
+    }
+    
+    public static net.reflact.engine.npc.NpcManager getNpcManager() {
+        return npcManager;
+    }
+
+    public static net.reflact.engine.quest.QuestManager getQuestManager() {
+        return questManager;
+    }
+
+    public static net.reflact.engine.guild.GuildManager getGuildManager() {
+        return guildManager;
+    }
+    
+    public static net.reflact.engine.classes.ClassManager getClassManager() {
+        return classManager;
     }
 }
