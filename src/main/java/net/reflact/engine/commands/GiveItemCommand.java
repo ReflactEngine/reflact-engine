@@ -9,7 +9,7 @@ import net.reflact.engine.ReflactEngine;
 
 public class GiveItemCommand extends Command {
     public GiveItemCommand() {
-        super("giveitem");
+        super("item");
 
         var itemIdArg = ArgumentType.String("itemId");
         
