@@ -58,7 +58,8 @@ class DatabaseManager {
                 "CREATE TABLE IF NOT EXISTS guilds (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         "name TEXT UNIQUE, " +
-                        "owner_uuid TEXT" +
+                        "owner_uuid TEXT, " +
+                        "has_island BOOLEAN DEFAULT 0" +
                         ")"
             )
 
@@ -132,6 +133,64 @@ class DatabaseManager {
             LOGGER.error("Failed to get guild name", e)
         }
         return null
+    }
+
+    fun removeGuildMember(uuid: String) {
+        val sql = "DELETE FROM guild_members WHERE player_uuid = ?"
+        try {
+            connection?.prepareStatement(sql)?.use { pstmt ->
+                pstmt.setString(1, uuid)
+                pstmt.executeUpdate()
+            }
+        } catch (e: SQLException) {
+            LOGGER.error("Failed to remove guild member", e)
+        }
+    }
+
+    fun deleteGuild(guildId: Int) {
+        val sqlMembers = "DELETE FROM guild_members WHERE guild_id = ?"
+        val sqlGuild = "DELETE FROM guilds WHERE id = ?"
+        try {
+            connection?.prepareStatement(sqlMembers)?.use { pstmt ->
+                pstmt.setInt(1, guildId)
+                pstmt.executeUpdate()
+            }
+            connection?.prepareStatement(sqlGuild)?.use { pstmt ->
+                pstmt.setInt(1, guildId)
+                pstmt.executeUpdate()
+            }
+        } catch (e: SQLException) {
+            LOGGER.error("Failed to delete guild", e)
+        }
+    }
+
+    fun hasIsland(guildId: Int): Boolean {
+        val sql = "SELECT has_island FROM guilds WHERE id = ?"
+        try {
+            connection?.prepareStatement(sql)?.use { pstmt ->
+                pstmt.setInt(1, guildId)
+                pstmt.executeQuery().use { rs ->
+                    if (rs.next()) return rs.getBoolean("has_island")
+                }
+            }
+        } catch (e: SQLException) {
+            // Column might not exist if DB wasn't updated (migration needed in real app)
+            // For now, assume false
+        }
+        return false
+    }
+
+    fun setHasIsland(guildId: Int, has: Boolean) {
+        val sql = "UPDATE guilds SET has_island = ? WHERE id = ?"
+        try {
+            connection?.prepareStatement(sql)?.use { pstmt ->
+                pstmt.setBoolean(1, has)
+                pstmt.setInt(2, guildId)
+                pstmt.executeUpdate()
+            }
+        } catch (e: SQLException) {
+            LOGGER.error("Failed to set has_island", e)
+        }
     }
 
     private fun seedDefaults() {

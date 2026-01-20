@@ -3,14 +3,21 @@ package net.reflact.engine.data
 import com.google.gson.annotations.Expose
 import net.reflact.common.attribute.AttributeContainer
 import net.reflact.common.attribute.RpgAttributes
+import net.reflact.engine.classes.ReflactClass
 import java.util.UUID
 
 class ReflactPlayer(
     val uuid: UUID,
     val username: String
 ) {
-    var rank: Rank = Rank.PLAYER
+    // No-args constructor for Gson
+    private constructor() : this(UUID.randomUUID(), "")
+
+    var rank: Rank = Rank.MEMBER
     var isBuildMode: Boolean = false
+
+    @Expose
+    var selectedClass: ReflactClass? = null
 
     @Expose
     val attributes: AttributeContainer = AttributeContainer()
@@ -69,12 +76,4 @@ class ReflactPlayer(
     
     val activeQuests: Set<String>
         get() = quests.keys
-
-    enum class Rank {
-        PLAYER, VIP, ADMIN;
-        
-        fun hasPermission(required: Rank): Boolean {
-            return this.ordinal >= required.ordinal
-        }
-    }
 }

@@ -9,6 +9,7 @@ object EffectRegistry {
     init {
         register("damage") { DamageEffect() }
         register("projectile") { ProjectileEffect() }
+        register("teleport") { TeleportEffect() }
     }
 
     fun register(type: String, factory: Supplier<SpellEffect>) {

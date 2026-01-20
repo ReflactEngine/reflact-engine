@@ -9,12 +9,16 @@ import net.reflact.engine.listeners.EngineListeners
 import net.reflact.engine.managers.ItemManager
 import net.reflact.engine.spells.FireballSpell
 import net.reflact.engine.spells.HealSpell
+import net.reflact.engine.spells.BashSpell
+import net.reflact.engine.spells.DashSpell
+import net.reflact.engine.spells.BlinkSpell
 import net.reflact.engine.managers.MapManager
 import net.reflact.engine.managers.PlayerManager
 import net.reflact.engine.networking.NetworkManager
 import net.reflact.engine.npc.NpcManager
 import net.reflact.engine.quest.QuestManager
 import net.reflact.engine.spells.SpellManager
+import net.reflact.engine.classes.ClassManager
 
 object ReflactEngine {
     private val databaseManager = DatabaseManager()
@@ -25,6 +29,7 @@ object ReflactEngine {
     private val npcManager = NpcManager()
     private val questManager = QuestManager()
     private val mapManager = MapManager()
+    private val classManager = ClassManager()
 
     fun init() {
         databaseManager.init()
@@ -32,6 +37,7 @@ object ReflactEngine {
         spellManager.init()
         npcManager.init()
         questManager.init()
+        classManager.init()
 
         // Listeners
         val globalEventHandler = net.minestom.server.MinecraftServer.getGlobalEventHandler()
@@ -44,10 +50,15 @@ object ReflactEngine {
         commandManager.register(RankCommand())
         commandManager.register(StopCommand())
         commandManager.register(RebootCommand())
+        commandManager.register(net.reflact.engine.commands.SpawnCommand())
+        commandManager.register(net.reflact.engine.commands.ReportCommand())
 
         // Spells
         spellManager.register(FireballSpell())
         spellManager.register(HealSpell())
+        spellManager.register(BashSpell())
+        spellManager.register(DashSpell())
+        spellManager.register(BlinkSpell())
     }
 
     @JvmStatic
@@ -73,4 +84,7 @@ object ReflactEngine {
     
     @JvmStatic
     fun getMapManager(): MapManager = mapManager
+
+    @JvmStatic
+    fun getClassManager(): ClassManager = classManager
 }
